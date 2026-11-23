@@ -5,6 +5,8 @@
 - Calculations with numpy, kept in their own module, separate from
   the window code
 - Diagrams drawn with matplotlib, embedded in the window
+- Native desktop preferences are stored in a small per-user JSON file; do not
+  write user preferences into the project source tree.
 
 ## Purpose
 Shear, moment, and deflection diagrams for a beam, with a check of
@@ -128,6 +130,9 @@ stress Fb = 0.900 ksi.
     cantilever boundary conditions y(0) = y'(0) = 0.
   - Report deflection positive downward.
   - Determine ymax = max(|y(x)|) and its location along the span.
+  - Use a numerical position grid that includes every support, point-load,
+    and uniform-load boundary so diagram discontinuities and extrema are not
+    missed. Apply the selected boundary conditions after numerical integration.
 - Bending stress:
   - Convert Mmax to kip-in: Mmax,in = Mmax,kip-ft * 12.
   - Calculate fb = Mmax,in / Sx, with fb in ksi.
@@ -154,8 +159,8 @@ stress Fb = 0.900 ksi.
   - Render each point load as a centered vertical arrow: downward loads use a
     shaft ending in a downward triangle, and upward loads use a shaft ending
     in an upward triangle.
-  - Do not use SVG markers for point-load arrows; use explicit line-and-triangle
-    geometry so the arrow remains vertically aligned with the load.
+  - Draw point-load arrows using explicit Matplotlib line-and-triangle geometry
+    so each arrow remains vertically aligned with its load.
   - Show every uniform load with its magnitude and loaded interval.
   - Label the support reactions in kip.
 - Shear diagram:
@@ -187,25 +192,26 @@ stress Fb = 0.900 ksi.
 - Inputs in a panel on the left.
 - Diagrams and answers on the right.
 - Allow the window to be resized.
-- Remove the line about phones.
+- Reflow the panels into a practical narrow-window layout when the desktop
+  window becomes constrained; this is a desktop application, not a web page.
 - Place a BYU logo at the top of the page with "Construction Management"
   underneath it.
 - Do not place a GIF, video, animated character, or other entertainment image
   in the masthead or at the top right of the page.
 - Use a navy-blue background for the page header and navy, white, and
   restrained neutral accents for the interface.
-- Keep the layout clean and professional, responsive, and readable on
-  desktop and mobile widths.
-- Do not use a full-page reload or navigation for calculations.
+- Keep the layout clean, professional, and readable at common desktop-window
+  widths.
+- Recalculate without restarting the application or opening another window.
 - Dark mode:
   - Place a sun/moon icon button in the top-right area of the masthead.
   - Use light mode on first use.
-  - Remember the user's selected theme in browser local storage.
+  - Remember the user's selected theme in the native per-user preferences file.
   - A saved theme choice overrides the first-use light-mode default.
-  - Switch between themes immediately without reloading the page.
+  - Switch between themes immediately without restarting the application.
   - In dark mode, use dark page and card surfaces with light text and preserve
     navy accents.
-  - Keep borders, gridlines, plots, SVG text, input fields, validation messages,
+  - Keep borders, gridlines, plots, plot text, input fields, validation messages,
     and pass/fail states readable with sufficient contrast in both themes.
   - Use an accessible label such as "Switch to dark mode" or
     "Switch to light mode", and support keyboard activation and visible focus.
@@ -215,8 +221,9 @@ stress Fb = 0.900 ksi.
   - Offer BYU, University of Utah, Utah State, SUU, and Weber.
   - Display official-looking text marks: BYU, U, USU, SUU, or Weber.
   - Update the masthead mark immediately when the dropdown changes.
-  - Remember the selected institution in browser local storage.
-  - Keep the selector, logo, and brand text readable at desktop and mobile sizes.
+  - Remember the selected institution in the native per-user preferences file.
+  - Keep the selector, logo, and brand text readable at common desktop-window
+    sizes.
   - Provide an accessible dropdown label and visible keyboard focus.
 
 ## Validation
@@ -266,7 +273,7 @@ input panel, beam area, diagram placeholders, and results panel.
 
 Check:
 - Inputs appear above results.
-- The layout is readable on desktop and mobile.
+- The layout is readable in wide and narrow desktop windows.
 - Navy styling is consistent.
 - Placeholder areas have sensible labels.
 
@@ -307,12 +314,12 @@ arrows, labels, and mobile behavior.
 
 Check:
 - Invalid or incomplete inputs remove stale results and show clear feedback.
-- Valid changes update every result without refreshing.
-- The design is complete and remains usable at common desktop and mobile widths.
+- Valid changes update every result without restarting the application.
+- The design is complete and remains usable at common desktop-window widths.
 - Light and dark modes switch immediately, preserve readable contrast, and
-  retain the user's choice after a reload.
+  retain the user's choice after restarting the application.
 - Changing the institution dropdown updates the masthead immediately and
-  retains the choice after reload.
+  retains the choice after restarting the application.
 
 ### Stage 6: Full validation pass
 Test the supplied example plus cantilevers, multiple point loads, partial uniform
@@ -322,4 +329,5 @@ Check:
 - Results are mathematically reasonable and consistent across all cases.
 - The validation example passes.
 - No out-of-scope behavior appears.
-- The app can be tested through GitHub Pages.
+- The app starts with `python app.py` and its Matplotlib diagrams render within
+  the Tkinter window.
