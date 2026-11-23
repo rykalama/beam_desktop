@@ -13,3 +13,7 @@
 - Asked: Adjust `spec.md` to reflect the agreed Tkinter implementation plan.
 - Changed: Replaced browser-only behaviors with native desktop equivalents and clarified numerical calculation, plotting, resizing, persistence, and launch requirements.
 - Worked: Yes.
+
+- Asked: Build the Tkinter beam-design application following the plan and `spec.md`.
+- Changed: Added the desktop interface, built-in section data, isolated NumPy calculations, embedded Matplotlib diagrams, dependency list, and automated engineering checks.
+- Worked: Yes. Python syntax checks, native Tkinter/Matplotlib construction, and all five supplied calculation validations passed.
