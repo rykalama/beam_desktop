@@ -37,3 +37,7 @@
 - Asked: Raise the graph titles in the PDF calculation sheet to avoid overlap with text.
 - Changed: Increased PDF-only diagram title padding while preserving the on-screen chart layout.
 - Worked: Yes. The calculation-sheet PDF test and the complete nine-test suite passed.
+
+- Asked: Write a short README explaining the app, required packages, and startup command.
+- Changed: Added `README.md` with installation and run instructions.
+- Worked: Yes.
