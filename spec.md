@@ -1,5 +1,11 @@
 # Beam Designer
 
+## Platform
+- Python desktop app using Tkinter, started with `python app.py`
+- Calculations with numpy, kept in their own module, separate from
+  the window code
+- Diagrams drawn with matplotlib, embedded in the window
+
 ## Purpose
 Shear, moment, and deflection diagrams for a beam, with a check of
 whether the beam is strong and stiff enough.
@@ -178,8 +184,10 @@ stress Fb = 0.900 ksi.
   show validation feedback instead.
 
 ## Look and feel
-- Inputs at the top.
-- Diagrams and answers underneath.
+- Inputs in a panel on the left.
+- Diagrams and answers on the right.
+- Allow the window to be resized.
+- Remove the line about phones.
 - Place a BYU logo at the top of the page with "Construction Management"
   underneath it.
 - Do not place a GIF, video, animated character, or other entertainment image
@@ -224,6 +232,10 @@ deflection 0.609 in.
 - The deflection limit is 240 in / 360 = 0.67 in, so deflection Pass.
 - The numerical display should round M to 50.00 kip-ft and deflection
   to 0.61 in.
+
+  5. Simply supported, 30 ft, W18x35, uniform 2 kips/ft from 0 to 15 ft
+   only: reactions 22.5 k (left) and 7.5 k (right); max moment
+   126.6 kip-ft at 11.25 ft.
 
 ### Stage 6 validation cases
 - 20 ft simply supported W12x26 with 1 kip/ft full-span uniform load:
