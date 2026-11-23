@@ -21,3 +21,19 @@
 - Asked: Run every validation case in `spec.md` against the beam calculations and report expected versus actual values.
 - Changed: Executed the numerical validation cases plus representative upward and multiple-load sign/equilibrium checks; no application code changed.
 - Worked: Yes. All five automated validation tests passed and the reported calculation outputs matched the specified targets.
+
+- Asked: Add Save and Open design files, update the specification, try the feature in the app, and rerun validation cases.
+- Changed: Added the File menu, JSON design persistence, round-trip and invalid-file tests, and Save/Open requirements to the specification.
+- Worked: Yes. A native app save/open cycle restored a cantilever design with two point loads and one uniform load; all seven automated tests passed.
+
+- Asked: Add CSV export of position, shear, moment, and deflection results; update the specification, try it in the app, and rerun validation cases.
+- Changed: Added the export requirement, a visible CSV-export button, Excel-friendly CSV output, and a CSV structure test.
+- Worked: Yes. The app exported 4,001 rows with the required columns for the default beam; all eight automated tests passed.
+
+- Asked: Add a PDF calculation sheet with inputs, diagrams, and checks; update the specification, try it in the app, and rerun validation cases.
+- Changed: Added the PDF requirement, a visible calculation-sheet export button, a landscape PDF generator, and a PDF export test.
+- Worked: Yes. The app generated a 36,814-byte PDF with a valid `%PDF` header; all nine automated tests passed.
+
+- Asked: Raise the graph titles in the PDF calculation sheet to avoid overlap with text.
+- Changed: Increased PDF-only diagram title padding while preserving the on-screen chart layout.
+- Worked: Yes. The calculation-sheet PDF test and the complete nine-test suite passed.

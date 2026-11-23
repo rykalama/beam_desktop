@@ -188,6 +188,41 @@ stress Fb = 0.900 ksi.
 - Do not display stale results after an input becomes invalid or incomplete;
   show validation feedback instead.
 
+## Save and open designs
+- Provide a **File** menu with **Save** and **Open** commands.
+- Save a beam design as a human-readable JSON file. The saved design must include
+  the support type, span, material, selected section, calculated deflection
+  limit and its `L/360` basis, point loads, and uniform loads.
+- Use a `.beam.json` extension by default and offer it in the native file dialog.
+- Open a previously saved design through the native file dialog, restore all
+  saved inputs, and immediately recalculate the diagrams and result summary.
+- Reject malformed, unsupported, or invalid design files with a clear native
+  error message; do not replace the current design when opening fails.
+- The saved deflection limit is informational because the application derives
+  the active limit from the restored span using `L/360`.
+
+## Export results
+- Provide an **Export results CSV** button beside the analysis summary.
+- Export the current valid analysis through a native save dialog, using a `.csv`
+  extension by default. The CSV must open directly in Microsoft Excel.
+- Include one row for every calculated position, with headers `x_ft`, `V_kip`,
+  `M_kip_ft`, and `deflection_in`. Preserve sufficient numeric precision for
+  engineering post-processing rather than limiting export values to the UI's
+  two-decimal display precision.
+- Do not export stale, invalid, or incomplete inputs; show clear validation
+  feedback instead.
+
+## Calculation sheet
+- Provide an **Export calculation sheet PDF** button beside the analysis summary.
+- Export the current valid design as a landscape PDF ready to hand in. The top
+  of the sheet must list the beam configuration, span, material and section
+  properties, every point and uniform load, and the `L/360` deflection limit.
+- Include the beam/load drawing, shear, moment, and deflection diagrams, plus
+  the reaction summary, maximum values, bending stress, utilization ratios,
+  and separate bending and deflection pass/fail checks.
+- Use a native save dialog and a `.pdf` extension by default. Do not create a
+  sheet from stale, invalid, or incomplete inputs.
+
 ## Look and feel
 - Inputs in a panel on the left.
 - Diagrams and answers on the right.
@@ -320,6 +355,12 @@ Check:
   retain the user's choice after restarting the application.
 - Changing the institution dropdown updates the masthead immediately and
   retains the choice after restarting the application.
+- Saving a valid design and opening it again restores the beam inputs, loads,
+  and calculated results.
+- Exporting valid results produces a CSV with the required four columns and
+  one data row for every calculated beam position.
+- Exporting a valid calculation sheet produces a PDF with the design inputs,
+  diagrams, results, and pass/fail checks.
 
 ### Stage 6: Full validation pass
 Test the supplied example plus cantilevers, multiple point loads, partial uniform

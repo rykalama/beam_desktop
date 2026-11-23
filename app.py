@@ -6,12 +6,15 @@ import json
 import os
 from pathlib import Path
 import tkinter as tk
-from tkinter import ttk
+from tkinter import filedialog, messagebox, ttk
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from beam_calculations import BeamInput, PointLoad, UniformLoad, analyze_beam, validate_input
 from beam_data import MATERIALS, section_properties
+from beam_design_io import make_design, open_design, save_design
+from beam_export import export_results_csv
+from beam_pdf import export_calculation_sheet
 from beam_plots import draw_all, make_figure
 
 
@@ -70,6 +73,7 @@ class BeamDesigner(tk.Tk):
             pass
 
     def _build(self):
+        self._build_menu()
         self.header = ttk.Frame(self, padding=(20, 14))
         self.header.pack(fill="x")
         self.brand_mark = ttk.Label(self.header, style="Header.TLabel", font=("Arial", 24, "bold"))
@@ -95,6 +99,16 @@ class BeamDesigner(tk.Tk):
         self._build_scroll_panel(left_shell)
         self._build_inputs(self.input_panel)
         self._build_results(right)
+
+    def _build_menu(self):
+        menu_bar = tk.Menu(self)
+        file_menu = tk.Menu(menu_bar, tearoff=False)
+        file_menu.add_command(label="Save", command=self._save_design, accelerator="Ctrl+S")
+        file_menu.add_command(label="Open", command=self._open_design, accelerator="Ctrl+O")
+        menu_bar.add_cascade(label="File", menu=file_menu)
+        self.configure(menu=menu_bar)
+        self.bind_all("<Control-s>", lambda _event: self._save_design())
+        self.bind_all("<Control-o>", lambda _event: self._open_design())
 
     def _build_scroll_panel(self, parent):
         self.scroll_canvas = tk.Canvas(parent, highlightthickness=0, width=370)
@@ -164,6 +178,10 @@ class BeamDesigner(tk.Tk):
         self.deflection_badge = ttk.Label(summary, text="Deflection —", style="NeutralBadge.TLabel", padding=(8, 4))
         self.bending_badge.grid(row=3, column=0, padx=8, pady=(4, 0), sticky="w")
         self.deflection_badge.grid(row=3, column=1, padx=8, pady=(4, 0), sticky="w")
+        self.export_button = ttk.Button(summary, text="Export results CSV", command=self._export_results)
+        self.export_button.grid(row=3, column=2, padx=8, pady=(4, 0), sticky="e")
+        self.pdf_button = ttk.Button(summary, text="Export calculation sheet PDF", command=self._export_calculation_sheet)
+        self.pdf_button.grid(row=4, column=0, columnspan=3, padx=8, pady=(8, 0), sticky="ew")
         self.figure = make_figure()
         self.figure_canvas = FigureCanvasTkAgg(self.figure, master=parent)
         self.figure_canvas.get_tk_widget().pack(fill="both", expand=True)
@@ -206,6 +224,95 @@ class BeamDesigner(tk.Tk):
         rows.pop(index)
         self._render_load_rows()
         self._schedule_update()
+
+    def _save_design(self):
+        try:
+            data, _properties = self._collect_input()
+            errors = validate_input(data)
+            if errors:
+                raise ValueError("\n".join(errors))
+            design = make_design(self.configuration_var.get(), float(self.span_var.get()),
+                                 self.material_var.get(), self.section_var.get(),
+                                 list(data.point_loads), list(data.uniform_loads))
+        except (ValueError, KeyError) as error:
+            messagebox.showerror("Cannot save design", f"Fix the current inputs before saving.\n\n{error}", parent=self)
+            return
+        path = filedialog.asksaveasfilename(parent=self, title="Save beam design", defaultextension=".beam.json",
+                                            filetypes=[("Beam Designer files", "*.beam.json"), ("JSON files", "*.json"), ("All files", "*.*")])
+        if not path:
+            return
+        try:
+            save_design(path, design)
+        except OSError as error:
+            messagebox.showerror("Cannot save design", str(error), parent=self)
+            return
+        messagebox.showinfo("Design saved", f"Saved beam design to:\n{path}", parent=self)
+
+    def _open_design(self):
+        path = filedialog.askopenfilename(parent=self, title="Open beam design",
+                                          filetypes=[("Beam Designer files", "*.beam.json"), ("JSON files", "*.json"), ("All files", "*.*")])
+        if not path:
+            return
+        try:
+            restored = open_design(path)
+        except ValueError as error:
+            messagebox.showerror("Cannot open design", str(error), parent=self)
+            return
+        # Mutate the interface only after the complete file has been validated.
+        self.configuration_var.set(restored["configuration"])
+        self.material_var.set(restored["material"])
+        self.section_var.set(restored["section"])
+        self.span_var.set(f"{restored['span_ft']:g}")
+        self.point_rows.clear()
+        self.uniform_rows.clear()
+        for load in restored["point_loads"]:
+            self._add_point_row(f"{load.magnitude_kip:g}", f"{load.location_ft:g}", load.direction)
+        for load in restored["uniform_loads"]:
+            self._add_uniform_row(f"{load.magnitude_kip_per_ft:g}", f"{load.start_ft:g}", f"{load.end_ft:g}")
+        self._render_load_rows()
+        self._schedule_update()
+
+    def _export_results(self):
+        try:
+            data, _properties = self._collect_input()
+            errors = validate_input(data)
+            if errors:
+                raise ValueError("\n".join(errors))
+            current_result = analyze_beam(data)
+        except (ValueError, KeyError) as error:
+            messagebox.showerror("Cannot export results", f"Fix the current inputs before exporting.\n\n{error}", parent=self)
+            return
+        path = filedialog.asksaveasfilename(parent=self, title="Export beam results", defaultextension=".csv",
+                                            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
+        if not path:
+            return
+        try:
+            export_results_csv(path, current_result)
+        except OSError as error:
+            messagebox.showerror("Cannot export results", str(error), parent=self)
+            return
+        messagebox.showinfo("Results exported", f"Saved beam results to:\n{path}", parent=self)
+
+    def _export_calculation_sheet(self):
+        try:
+            data, properties = self._collect_input()
+            errors = validate_input(data)
+            if errors:
+                raise ValueError("\n".join(errors))
+            current_result = analyze_beam(data)
+        except (ValueError, KeyError) as error:
+            messagebox.showerror("Cannot export calculation sheet", f"Fix the current inputs before exporting.\n\n{error}", parent=self)
+            return
+        path = filedialog.asksaveasfilename(parent=self, title="Export calculation sheet", defaultextension=".pdf",
+                                            filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")])
+        if not path:
+            return
+        try:
+            export_calculation_sheet(path, data, current_result, self.material_var.get(), self.section_var.get(), properties)
+        except (OSError, ValueError) as error:
+            messagebox.showerror("Cannot export calculation sheet", str(error), parent=self)
+            return
+        messagebox.showinfo("Calculation sheet exported", f"Saved calculation sheet to:\n{path}", parent=self)
 
     def _input_changed(self, *_):
         self._schedule_update()

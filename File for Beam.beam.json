@@ -1,0 +1,20 @@
+{
+  "format": "beam-designer-design",
+  "version": 1,
+  "beam": {
+    "configuration": "Simply supported",
+    "span_ft": 20.0,
+    "material": "Steel",
+    "section": "W12x26",
+    "deflection_limit_in": 0.6666666666666666,
+    "deflection_limit_basis": "L/360",
+    "point_loads": [],
+    "uniform_loads": [
+      {
+        "magnitude_kip_per_ft": 1.0,
+        "start_ft": 0.0,
+        "end_ft": 20.0
+      }
+    ]
+  }
+}

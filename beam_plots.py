@@ -38,6 +38,47 @@ def draw_all(figure: Figure, data: BeamInput | None, result: BeamResult | None, 
     _draw_response(deflection_axis, result.x_in / 12, result.deflection_in, "Deflection", "in (down +)", result.max_deflection_in, result.max_deflection_location_ft, colors)
 
 
+def draw_calculation_sheet(figure: Figure, data: BeamInput, result: BeamResult,
+                           material: str, section: str, properties: dict) -> None:
+    """Render a print-oriented, single-page calculation sheet."""
+    colors = _colors(False)
+    figure.clear()
+    figure.set_facecolor("white")
+    grid = figure.add_gridspec(3, 2, height_ratios=(.72, 1, 1), hspace=.62, wspace=.25,
+                               left=.06, right=.96, top=.94, bottom=.07)
+    details_axis = figure.add_subplot(grid[0, :])
+    details_axis.axis("off")
+    details_axis.text(0, 1.08, "Beam Designer | Calculation Sheet", color="#003da5",
+                      fontweight="bold", fontsize=16, va="top", transform=details_axis.transAxes)
+    loads = [f"{load.magnitude_kip:g} k {load.direction.lower()} @ {load.location_ft:g} ft" for load in data.point_loads if load.magnitude_kip]
+    loads.extend(f"{load.magnitude_kip_per_ft:g} k/ft from {load.start_ft:g} to {load.end_ft:g} ft" for load in data.uniform_loads if load.magnitude_kip_per_ft)
+    input_text = (f"Configuration: {data.configuration}    Span: {data.span_ft:g} ft\n"
+                  f"Material: {material}    Section: {section}\n"
+                  f"E: {properties['E']:,.0f} ksi    Ix: {properties['ix']:.2f} in⁴    "
+                  f"Sx: {properties['sx']:.2f} in³    Fb: {properties['fb_allow']:.3f} ksi\n"
+                  f"Loads: {'; '.join(loads) if loads else 'None'}")
+    reactions = ", ".join(f"{name} = {value:.2f} k" for name, value in result.reactions_kip.items())
+    if result.fixed_end_moment_kip_ft is not None:
+        reactions += f", Mfixed = {result.fixed_end_moment_kip_ft:.2f} kip-ft"
+    bend_status = "PASS" if result.bending_ratio <= 1 else "FAIL"
+    deflection_status = "PASS" if result.deflection_ratio <= 1 else "FAIL"
+    check_text = (f"Reactions: {reactions}\n"
+                  f"Vmax: {result.max_shear_kip:.2f} k    Mmax: {result.max_moment_kip_ft:.2f} kip-ft\n"
+                  f"ymax: {result.max_deflection_in:.2f} in    Limit L/360: {result.deflection_limit_in:.2f} in\n"
+                  f"Bending: {bend_status} ({result.bending_stress_ksi:.2f} / {data.allowable_stress_ksi:.2f} ksi, {result.bending_ratio:.2f})\n"
+                  f"Deflection: {deflection_status} ({result.deflection_ratio:.2f} / 1.00)")
+    details_axis.text(0, .88, input_text, fontsize=8.5, va="top", transform=details_axis.transAxes)
+    details_axis.text(.60, .88, check_text, fontsize=8.5, va="top", transform=details_axis.transAxes)
+    beam_axis = figure.add_subplot(grid[1, 0])
+    shear_axis = figure.add_subplot(grid[1, 1])
+    moment_axis = figure.add_subplot(grid[2, 0])
+    deflection_axis = figure.add_subplot(grid[2, 1])
+    _draw_beam(beam_axis, data, result, colors, title_pad=16)
+    _draw_response(shear_axis, result.x_in / 12, result.shear_kip, "Shear", "kip", result.max_shear_kip, result.max_shear_location_ft, colors, title_pad=16)
+    _draw_response(moment_axis, result.x_in / 12, result.moment_kip_in / 12, "Moment", "kip-ft", result.max_moment_kip_ft, result.max_moment_location_ft, colors, title_pad=16)
+    _draw_response(deflection_axis, result.x_in / 12, result.deflection_in, "Deflection", "in (down +)", result.max_deflection_in, result.max_deflection_location_ft, colors, title_pad=16)
+
+
 def _style(axis, colors: dict[str, str]) -> None:
     axis.set_facecolor(colors["surface"])
     axis.tick_params(colors=colors["text"], labelsize=8)
@@ -49,10 +90,10 @@ def _style(axis, colors: dict[str, str]) -> None:
     axis.grid(True, alpha=.35, color=colors["grid"])
 
 
-def _draw_beam(axis, data: BeamInput, result: BeamResult, colors: dict[str, str]) -> None:
+def _draw_beam(axis, data: BeamInput, result: BeamResult, colors: dict[str, str], title_pad: float = 6) -> None:
     _style(axis, colors)
     length = data.span_ft
-    axis.set_title("Beam and loads", fontweight="bold")
+    axis.set_title("Beam and loads", fontweight="bold", pad=title_pad)
     axis.plot([0, length], [0, 0], color=colors["navy"], linewidth=5, solid_capstyle="butt")
     if data.configuration == "Simply supported":
         axis.fill([0, -.32, .32], [-.06, -.55, -.55], color=colors["text"])
@@ -94,13 +135,13 @@ def _draw_beam(axis, data: BeamInput, result: BeamResult, colors: dict[str, str]
     axis.set_yticks([])
 
 
-def _draw_response(axis, x, values, title, units, maximum, position, colors):
+def _draw_response(axis, x, values, title, units, maximum, position, colors, title_pad: float = 6):
     _style(axis, colors)
     axis.plot(x, values, color=colors["navy"], linewidth=1.8)
     axis.axhline(0, color=colors["grid"], linewidth=.8)
     index = int(np.argmax(np.abs(values)))
     axis.scatter([x[index]], [values[index]], color=colors["load"], zorder=3, s=20)
     axis.annotate(f"max |{maximum:.2f}| @ {position:.2f} ft", (x[index], values[index]), xytext=(5, 8), textcoords="offset points", fontsize=7, color=colors["text"])
-    axis.set_title(title, fontweight="bold")
+    axis.set_title(title, fontweight="bold", pad=title_pad)
     axis.set_xlabel("Position (ft)")
     axis.set_ylabel(units)
